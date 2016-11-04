@@ -9,6 +9,7 @@
     "async": "~0.2.8",
     "express": "^4.14.0",
     "mongoose": "^4.6.6",
+    "passport": "^0.3.2",
     "socket.io": "~0.9.14"
   }
 }
