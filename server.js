@@ -86,20 +86,32 @@
 
 var express = require('express');
 var app = express();
-//var mongoose = require('mongoose');
+var mongoose = require('mongoose');
+var passport = require('passport');
+var session = require('express-session')
 var routes = require('./app/routes/index.js');
 
 
 
-//require('dotenv').load();
-//mongoose.connect(process.env.MONGODB_URI);
+require('dotenv').load();
+require('./app/config/passport')(passport);
+mongoose.connect(process.env.MONGODB_URI);
 
 app.use('/controllers', express.static(process.cwd() + '/app/controllers'));
 app.use('/services', express.static(process.cwd() + '/app/services'));
 app.use('/client', express.static(process.cwd() + '/client'));
 app.use('/common', express.static(process.cwd() + '/app/common'));
 
-routes(app);
+app.use(session({
+    secret:'talkSweet',
+    resave:false,
+    saveUninitialized:true
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+routes(app,passport);
 
 var port = process.env.PORT || 8080;
 

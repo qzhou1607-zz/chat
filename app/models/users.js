@@ -9,6 +9,12 @@ var User = new Schema({
         userName:String,
         publicRepos:Number
     },
+    google:{
+        id:String,
+        token:String,
+        name:String,
+        email:String
+    },
     isOnline:Boolean
 });
 

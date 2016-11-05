@@ -45,3 +45,15 @@ md-input-container {
     position: relative;
     margin: 18px 5px;
 }
+
+/*login page*/
+
+md-whiteframe {
+  margin: 15px;
+  padding: 25px;
+}
+#mail-logo {
+    margin:0 auto;
+    width:150px;
+    height:160px;
+}
