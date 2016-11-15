@@ -46,6 +46,10 @@ md-input-container {
     margin: 18px 5px;
 }
 
+ng-view.ng-scope {
+  width:100%;
+}
+
 /*login page*/
 
 md-whiteframe {

@@ -3,11 +3,13 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var Room = new Schema({
-    id:String,
+    name:String,
+    description:String,
     history:[{
-        who:String,
-        what:String,
-        when:String
+        id:String,
+        name:String,
+        content:String,
+        time:String
     }]
 });
 

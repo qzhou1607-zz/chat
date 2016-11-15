@@ -1,4 +1,4 @@
-var app = angular.module('StarterApp', ['ngMaterial', 'ngMdIcons']);
+var app = angular.module('StarterApp', ['ngMaterial', 'ngMdIcons','ngRoute']);
 
 //angular material theme
 app.config(function($mdThemingProvider) {
@@ -7,7 +7,181 @@ app.config(function($mdThemingProvider) {
     .accentPalette('orange');
 });
 
-app.controller('AppCtrl', ['$scope', '$mdBottomSheet','$mdSidenav', '$mdDialog', function($scope, $mdBottomSheet, $mdSidenav, $mdDialog){
+//configure routes
+// app.config(function($routeProvider) {
+//   $routeProvider
+//     //route for the message page
+//     .when('/',{
+//       templateUrl:'/client/pages/messages.html',
+//       controller:'AppCtrl'
+//     })
+//     .when('/rooms',{
+//       templateUrl:'/client/pages/rooms.html',
+//       controller:'RoomCtrl'
+//     })
+// });
+
+app.service('factory',function($http,$q) {
+  var user = {};
+  var messages;
+  var currentRoom = [];
+  //retrieve user information
+  $http.get('/user')
+    .then(function(response) {
+      var google_user = response.data.google;
+      user['name'] = google_user.name;
+      user['email'] = google_user.email;
+      user['id'] = google_user.id;
+    });
+    
+    this.getUser = function() {
+      return user;
+    };
+  
+    this.loadMessages = function(currentRoomName) {
+      var deferred = $q.defer();
+      $http({method:'GET',url:'/message?currentRoomName=' + currentRoomName})
+      .then(function(response) {
+        deferred.resolve(response.data);
+      });
+      return deferred.promise;
+    }
+    
+    this.sendMessage = function(newMessage, currentRoomdName) {
+      var data = {
+        message:newMessage,
+        currentRoomName:currentRoomdName
+      };
+      var deferred = $q.defer();
+      $http({ method: "POST", url: '/message', data: data})
+        .then(function(response) {
+          deferred.resolve(response);
+        });
+      return deferred.promise;
+    };
+    
+    this.getMessages = function() {
+      console.log(messages);
+      return messages;
+    }
+    
+      //list all rooms
+    this.getRooms = function() {
+      var deferred = $q.defer();
+      $http({method:'GET', url:'/rooms'})
+        .then(function(response) {
+          deferred.resolve(response.data);
+        });
+        return deferred.promise;
+    }
+    //add a new room 
+    this.addRoom = function(name,description) {
+      var data = { 
+        newRoomName:name,
+        newRoomDescription:description
+      };
+      $http({ method: "POST", url: '/rooms', data:data})
+        .then(function(response) {
+          console.log(response);
+        });
+    };
+    
+    this.setCurrentRoom = function(currentRoomId,currentRoomName) {
+      currentRoom = [currentRoomId,currentRoomName];
+    }
+    
+    this.getCurrentRoom = function() {
+      return currentRoom;
+    }
+});
+
+
+
+app.controller('RoomCtrl',['$scope','factory',function($scope,factory) {
+  
+  updateCurrentRoom();
+    
+  //load rooms
+  factory.getRooms()
+    .then(function(rooms) {
+      $scope.rooms = rooms;
+    });
+    
+  //add  new room
+  $scope.addRoom = function() {
+    factory.addRoom($scope.newRoomName, $scope.newRoomDescription);
+  };
+  $scope.selectRoom = function(id,name) {
+    factory.setCurrentRoom(id,name);
+    //updateCurrentRoom();
+  }
+  
+  //keep current room info up to date
+  $scope.$watch(function() { return factory.getCurrentRoom(); }, function() {
+    updateCurrentRoom();
+  })
+  
+  //helper function
+  function updateCurrentRoom() {
+    var currentRoom = factory.getCurrentRoom();
+    if (currentRoom) {
+      $scope.currentRoomId = currentRoom[0];
+      $scope.currentRoomName = currentRoom[1];
+    }
+  }
+}]);
+
+app.controller('AppCtrl', ['$scope', '$mdBottomSheet','$mdSidenav', '$mdDialog', '$http','factory',function($scope, $mdBottomSheet, $mdSidenav, $mdDialog, $http,factory){
+  //helper function
+  function updateCurrentRoom() {
+    var currentRoom = factory.getCurrentRoom();
+    if (currentRoom) {
+      $scope.currentRoomId = currentRoom[0];
+      $scope.currentRoomName = currentRoom[1];
+    }
+  }
+  
+  //keep current room info up to date
+  updateCurrentRoom();
+  $scope.$watch(function() { return factory.getCurrentRoom(); }, function() {
+    updateCurrentRoom();
+    //retrieve chat history
+    console.log($scope.currentRoomName);
+    factory.loadMessages($scope.currentRoomName)
+      .then(function(messages) {
+        console.log(messages);
+        $scope.history = messages;
+      });
+  })
+  
+  
+  $scope.user = factory.getUser();
+  $scope.history = [];
+  
+  //retrieve chat history
+  // factory.loadMessages($scope.currentRoomName)
+  //   .then(function(messages) {
+  //     $scope.history = messages;
+  //   });
+  
+  
+  
+  //send new message
+  $scope.sendMessage = function() {
+    console.log($scope.currentRoomName);
+    factory.sendMessage($scope.newMessage,$scope.currentRoomName)
+      .then(function(response) {
+        //update $scope
+        $scope.history.push({
+          id:$scope.user.id,
+          name:$scope.user.name,
+          content:$scope.newMessage,
+          time:new Date()
+        });
+      }
+    );
+  };
+    
   $scope.toggleSidenav = function(menuId) {
     $mdSidenav(menuId).toggle();
   };
@@ -18,12 +192,12 @@ app.controller('AppCtrl', ['$scope', '$mdBottomSheet','$mdSidenav', '$mdDialog',
       icon: 'dashboard'
     },
     {
-      link : '',
-      title: 'Friends',
+      link : '#/rooms',
+      title: 'Rooms',
       icon: 'group'
     },
     {
-      link : '',
+      link : '#/',
       title: 'Messages',
       icon: 'message'
     }
@@ -46,31 +220,7 @@ app.controller('AppCtrl', ['$scope', '$mdBottomSheet','$mdSidenav', '$mdDialog',
         who: 'Ali Conners',
         when: '3:08PM',
         notes: " I'll be in your neighborhood doing errands"
-      },
-    //   {
-    //     what: 'Summer BBQ',
-    //     who: 'to Alex, Scott, Jennifer',
-    //     when: '3:08PM',
-    //     notes: "Wish I could come out but I'm out of town this weekend"
-    //   },
-    //   {
-    //     what: 'Oui Oui',
-    //     who: 'Sandra Adams',
-    //     when: '3:08PM',
-    //     notes: "Do you have Paris recommendations? Have you ever been?"
-    //   },
-    //   {
-    //     what: 'Birthday Gift',
-    //     who: 'Trevor Hansen',
-    //     when: '3:08PM',
-    //     notes: "Have any ideas of what we should get Heidi for her birthday?"
-    //   },
-    //   {
-    //     what: 'Recipe to try',
-    //     who: 'Brian Holt',
-    //     when: '3:08PM',
-    //     notes: "We should eat this: Grapefruit, Squash, Corn, and Tomatillo tacos"
-    //   },
+      }
     ];
   $scope.alert = '';
   $scope.showListBottomSheet = function($event) {
@@ -87,7 +237,7 @@ app.controller('AppCtrl', ['$scope', '$mdBottomSheet','$mdSidenav', '$mdDialog',
   $scope.showAdd = function(ev) {
     $mdDialog.show({
       controller: DialogController,
-      template: '<md-dialog aria-label="Mango (Fruit)"> <md-content class="md-padding"> <form name="userForm"> <div layout layout-sm="column"> <md-input-container flex> <label>First Name</label> <input ng-model="user.firstName" placeholder="Placeholder text"> </md-input-container> <md-input-container flex> <label>Last Name</label> <input ng-model="theMax"> </md-input-container> </div> <md-input-container flex> <label>Address</label> <input ng-model="user.address"> </md-input-container> <div layout layout-sm="column"> <md-input-container flex> <label>City</label> <input ng-model="user.city"> </md-input-container> <md-input-container flex> <label>State</label> <input ng-model="user.state"> </md-input-container> <md-input-container flex> <label>Postal Code</label> <input ng-model="user.postalCode"> </md-input-container> </div> <md-input-container flex> <label>Biography</label> <textarea ng-model="user.biography" columns="1" md-maxlength="150"></textarea> </md-input-container> </form> </md-content> <div class="md-actions" layout="row"> <span flex></span> <md-button ng-click="answer(\'not useful\')"> Cancel </md-button> <md-button ng-click="answer(\'useful\')" class="md-primary"> Save </md-button> </div></md-dialog>',
+      template: '<md-dialog aria-label="Mango (Fruit)" ng-controller="RoomCtrl"> <md-content class="md-padding"> <form name="userForm"> <div layout layout-sm="column"> <md-input-container flex> <label>Room Name</label> <input ng-model="newRoomName"> </md-input-container> </div> <md-input-container flex> <label>Description</label> <input ng-model="newRoomDescription"> </md-input-container> </form> </md-content> <div class="md-actions" layout="row"> <span flex></span> <md-button ng-click="answer(\'not useful\')"> Cancel </md-button> <md-button class="md-primary" ng-click="addRoom()"> Save </md-button> </div></md-dialog>',
       targetEvent: ev,
     })
     .then(function(answer) {

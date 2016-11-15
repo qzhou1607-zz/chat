@@ -90,6 +90,7 @@ var mongoose = require('mongoose');
 var passport = require('passport');
 var session = require('express-session')
 var routes = require('./app/routes/index.js');
+var bodyParser = require('body-parser');
 
 
 
@@ -97,6 +98,10 @@ require('dotenv').load();
 require('./app/config/passport')(passport);
 mongoose.connect(process.env.MONGODB_URI);
 
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
+app.use(bodyParser.json());
 app.use('/controllers', express.static(process.cwd() + '/app/controllers'));
 app.use('/services', express.static(process.cwd() + '/app/services'));
 app.use('/client', express.static(process.cwd() + '/client'));

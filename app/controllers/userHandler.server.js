@@ -1,24 +1,25 @@
 'use strict';
 var path = require('path');
 var Users = require('../models/users.js');
-var Rooms = require('../models/rooms.js');
 
-function roomHandler () {
-    
-    this.getRooms = function(req,res) {
-        Rooms.find({})
-            .exec(function(err,result) {
-                if (err) { throw err; }
-                res.json(result);
-            });
+function userHandler () {
+    this.getUsrInfo = function(req,res) {
+        console.log(req.user.google.id);
+        Users.findOne({'google.id':req.user.google.id},{'_id':false})
+                .exec( function(err,result) {
+                    if(err) {
+                        throw err;
+                    } 
+                    if (result) {
+                        //console.log(result);
+                        res.json(result);
+                        //  res.json({
+                        //      name:result.google.name,
+                        //      email:result.google.email
+                        //  });
+                    } 
+                })
     }
-    
-    this.addRoom = function(req,res) {
-        var newRoomName = req.body.newRoomName;
-        var newRoomDescription = req.body.newRoomDescription;
-        //insert a new room
-        new Rooms({name:newRoomName,description:newRoomDescription, history:[]}).save();
-    };
     
     // this.addClick = function(req,res) {
     //     Users.findOneAndUpdate({'github.id':req.user.github.id},{$inc:{'nbrClicks.clicks':1}})
@@ -39,4 +40,4 @@ function roomHandler () {
     //     );
     // }
 }
-module.exports = roomHandler;
+module.exports = userHandler;

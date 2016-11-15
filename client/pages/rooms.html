@@ -1,0 +1,22 @@
+<md-card flex-gt-sm="90" flex-gt-md="80">
+                    <md-card-content>
+                      <h2>Rooms</h2>
+                      <md-list>
+                        <md-item ng-repeat="room in rooms">
+                          <md-item-content>
+                            <div class="md-tile-left inset" hide-sm>
+                                <user-avatar></user-avatar>
+                            </div>
+                            <div class="md-tile-content">
+                              <h3>{{room.name}}</h3>
+                              <p>
+                                {{room.description}}
+                              </p>
+                            </div>
+                          </md-item-content>
+                        </md-item>
+                        <md-item layout class="inset">
+                        </md-item>
+                      </md-list>
+                    </md-card-content>
+                  </md-card>

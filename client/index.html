@@ -3,6 +3,9 @@
     <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/angular_material/0.8.3/angular-material.min.css">
     <link rel="stylesheet" href="/client/css/main.css">
     <link rel="icon" href="/client/img/logo_mail_sm.png">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.15.2/moment.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.6/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.25/angular-route.js"></script>
   </head>
   <body layout="row" ng-controller="AppCtrl">
     <md-sidenav layout="column" class="md-sidenav-left md-whiteframe-z2" md-component-id="left" md-is-locked-open="$mdMedia('gt-md')">
@@ -11,8 +14,11 @@
         <div layout="column" class="md-toolbar-tools-bottom inset">
           <user-avatar></user-avatar>
           <span></span>
-          <div>Firstname Lastname</div>
-          <div>email@domainname.com</div>
+          <div>{{user.name}}</div>
+          <div>{{user.email}}</div>
+          <div>
+            <a href="/logout">Log Out</a>
+          </div>
         </div>
       </md-toolbar>
       <md-list>
@@ -22,7 +28,7 @@
             <div class="inset">
               <ng-md-icon icon="{{item.icon}}"></ng-md-icon>
             </div>
-            <div class="inset">{{item.title}}
+            <div class="inset"><a href="{{item.link}}">{{item.title}}</a>
             </div>
           </md-item-content>
         </a>
@@ -43,31 +49,31 @@
     </md-list>
     </md-sidenav>
     <div layout="column" class="relative" layout-fill role="main">
-      <!--<md-button class="md-fab md-fab-bottom-right" aria-label="Add" ng-click="showAdd($event)">-->
-      <!--  <ng-md-icon icon="add"></ng-md-icon>-->
-      <!--</md-button>-->
+      <md-button class="md-fab md-fab-bottom-right" aria-label="Add" ng-click="showAdd($event)">
+        <ng-md-icon icon="add"></ng-md-icon>
+      </md-button>
       <md-toolbar ng-show="!showSearch">
-        <!--<div class="md-toolbar-tools">-->
-        <!--  <md-button ng-click="toggleSidenav('left')" hide-gt-md aria-label="Menu">-->
-        <!--    <ng-md-icon icon="menu"></ng-md-icon>-->
-        <!--  </md-button>-->
-        <!--  <h3>-->
-        <!--    Dashboard-->
-        <!--  </h3>-->
-        <!--  <span flex></span>-->
-        <!--  <md-button aria-label="Search" ng-click="showSearch = !showSearch">-->
-        <!--    <ng-md-icon icon="search"></ng-md-icon>-->
-        <!--  </md-button>-->
-        <!--  <md-button aria-label="Open Settings" ng-click="showListBottomSheet($event)">-->
-        <!--    <ng-md-icon icon="more_vert"></ng-md-icon>-->
-        <!--  </md-button>-->
-        <!--</div>-->
+        <div class="md-toolbar-tools">
+          <md-button ng-click="toggleSidenav('left')" hide-gt-md aria-label="Menu">
+            <ng-md-icon icon="menu"></ng-md-icon>
+          </md-button>
+          <h3>
+            Dashboard
+          </h3>
+          <span flex></span>
+          <md-button aria-label="Search" ng-click="showSearch = !showSearch">
+            <ng-md-icon icon="search"></ng-md-icon>
+          </md-button>
+          <md-button aria-label="Open Settings" ng-click="showListBottomSheet($event)">
+            <ng-md-icon icon="more_vert"></ng-md-icon>
+          </md-button>
+        </div>
         <md-tabs md-stretch-tabs class="md-primary" md-selected="data.selectedIndex">
           <md-tab id="tab1" aria-controls="tab1-content">
-            Latest
+            {{currentRoomName}}
           </md-tab>
           <md-tab id="tab2" aria-controls="tab2-content">
-            Favorites
+            Rooms
           </md-tab>
         </md-tabs>
       </md-toolbar>
@@ -103,20 +109,22 @@
                    md-swipe-left="next()"
                    md-swipe-right="previous()"
                    layout="row" layout-align="center center">
+                
                   <md-card flex-gt-sm="90" flex-gt-md="80">
+                    
                     <md-card-content>
                       <h2>Activity</h2>
                       <md-list>
-                        <md-item ng-repeat="item in activity | filter:search">
+                        <md-item ng-repeat="item in history">
                           <md-item-content>
                             <div class="md-tile-left inset" hide-sm>
                                 <user-avatar></user-avatar>
                             </div>
                             <div class="md-tile-content">
-                              <h3>{{item.what}}</h3>
-                              <h4>{{item.who}}</h4>
+                              <h3>{{item.name}}</h3>
+                              <h4>{{item.content}}</h4>
                               <p>
-                                {{item.notes}}
+                                {{item.time}}
                               </p>
                             </div>
                           </md-item-content>
@@ -134,20 +142,21 @@
                    md-swipe-left="next()"
                    md-swipe-right="previous()" 
                    layout="row" layout-align="center center">
-                  <md-card flex-gt-sm="90" flex-gt-md="80">
+                  <md-card flex-gt-sm="90" flex-gt-md="80" ng-controller="RoomCtrl">
                     <md-card-content>
-                      <h2>Favorites</h2>
+                      <h2>Rooms</h2>
+                      <h3>Current Room : {{ currentRoomName }}</h3>
                       <md-list>
-                        <md-item ng-repeat="item in activity | filter:search | orderBy:'-what'">
+                        <md-item ng-repeat="item in rooms | filter:search | orderBy:'-what'">
                           <md-item-content>
                             <div class="md-tile-left inset" hide-sm>
                                 <user-avatar></user-avatar>
                             </div>
-                            <div class="md-tile-content">
-                              <h3>{{item.what}}</h3>
-                              <h4>{{item.who}}</h4>
+                            <div class="md-tile-content" ng-click="selectRoom(item._id, item.name)">
+                              <h3>{{item.name}}</h3>
+                              <h4>{{item.description}}</h4>
                               <p>
-                                {{item.notes}}
+                                # of messages: {{item.history.length}}
                               </p>
                             </div>
                           </md-item-content>
@@ -166,7 +175,8 @@
       <md-content>
         <md-input-container layout-padding layout="column">
           <label>New Message</label>
-          <input ng-enter="" ng-model="" md-maxlength="350">
+          <input  ng-model="newMessage" md-maxlength="350">
+          <md-button ng-click="sendMessage()">Send</md-button>
           <div class="md-errors-spacer">
             <div class="md-char-counter">0/350</div>
           </div>
@@ -174,7 +184,6 @@
       </md-content>
     </div>
     <!-- Angular Material Dependencies -->
-    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.6/angular.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.6/angular-animate.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular-aria.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/angular_material/0.8.3/angular-material.min.js"></script>
