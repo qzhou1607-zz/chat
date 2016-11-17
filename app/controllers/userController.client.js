@@ -132,43 +132,40 @@ app.controller('RoomCtrl',['$scope','factory',function($scope,factory) {
 }]);
 
 app.controller('AppCtrl', ['$scope', '$mdBottomSheet','$mdSidenav', '$mdDialog', '$http','factory',function($scope, $mdBottomSheet, $mdSidenav, $mdDialog, $http,factory){
+  //initial value
+  $scope.currentRoomIsSet = false;
+  $scope.user = factory.getUser();
+  $scope.history = [];
+  
+  
   //helper function
   function updateCurrentRoom() {
     var currentRoom = factory.getCurrentRoom();
-    if (currentRoom) {
+    if (currentRoom.length > 0) {
       $scope.currentRoomId = currentRoom[0];
       $scope.currentRoomName = currentRoom[1];
+      $scope.currentRoomIsSet = true;
     }
   }
   
-  //keep current room info up to date
-  updateCurrentRoom();
+  //load messages in the current room
   $scope.$watch(function() { return factory.getCurrentRoom(); }, function() {
     updateCurrentRoom();
     //retrieve chat history
-    console.log($scope.currentRoomName);
     factory.loadMessages($scope.currentRoomName)
       .then(function(messages) {
-        console.log(messages);
         $scope.history = messages;
       });
   })
   
-  
-  $scope.user = factory.getUser();
-  $scope.history = [];
-  
-  //retrieve chat history
-  // factory.loadMessages($scope.currentRoomName)
-  //   .then(function(messages) {
-  //     $scope.history = messages;
-  //   });
+  $scope.switchTab = function(index) {
+    $scope.data.selectedIndex = index;
+  }
   
   
   
   //send new message
   $scope.sendMessage = function() {
-    console.log($scope.currentRoomName);
     factory.sendMessage($scope.newMessage,$scope.currentRoomName)
       .then(function(response) {
         //update $scope
@@ -185,19 +182,20 @@ app.controller('AppCtrl', ['$scope', '$mdBottomSheet','$mdSidenav', '$mdDialog',
   $scope.toggleSidenav = function(menuId) {
     $mdSidenav(menuId).toggle();
   };
+  
  	$scope.menu = [
+    // {
+    //   link : '',
+    //   title: 'Dashboard',
+    //   icon: 'dashboard'
+    // },
     {
-      link : '',
-      title: 'Dashboard',
-      icon: 'dashboard'
-    },
-    {
-      link : '#/rooms',
+      index : 0,
       title: 'Rooms',
       icon: 'group'
     },
     {
-      link : '#/',
+      index : 1,
       title: 'Messages',
       icon: 'message'
     }
@@ -214,25 +212,18 @@ app.controller('AppCtrl', ['$scope', '$mdBottomSheet','$mdSidenav', '$mdDialog',
 //       icon: 'settings'
 //     }
 //   ];
-  $scope.activity = [
-      {
-        // what: 'Brunch this weekend?',
-        who: 'Ali Conners',
-        when: '3:08PM',
-        notes: " I'll be in your neighborhood doing errands"
-      }
-    ];
-  $scope.alert = '';
-  $scope.showListBottomSheet = function($event) {
-    $scope.alert = '';
-    $mdBottomSheet.show({
-      template: '<md-bottom-sheet class="md-list md-has-header"> <md-subheader>Settings</md-subheader> <md-list> <md-item ng-repeat="item in items"><md-item-content md-ink-ripple flex class="inset"> <a flex aria-label="{{item.name}}" ng-click="listItemClick($index)"> <span class="md-inline-list-icon-label">{{ item.name }}</span> </a></md-item-content> </md-item> </md-list></md-bottom-sheet>',
-      controller: 'ListBottomSheetCtrl',
-      targetEvent: $event
-    }).then(function(clickedItem) {
-      $scope.alert = clickedItem.name + ' clicked!';
-    });
-  };
+  
+  
+  // $scope.showListBottomSheet = function($event) {
+  //   $scope.alert = '';
+  //   $mdBottomSheet.show({
+  //     template: '<md-bottom-sheet class="md-list md-has-header"> <md-subheader>Settings</md-subheader> <md-list> <md-item ng-repeat="item in items"><md-item-content md-ink-ripple flex class="inset"> <a flex aria-label="{{item.name}}" ng-click="listItemClick($index)"> <span class="md-inline-list-icon-label">{{ item.name }}</span> </a></md-item-content> </md-item> </md-list></md-bottom-sheet>',
+  //     controller: 'ListBottomSheetCtrl',
+  //     targetEvent: $event
+  //   }).then(function(clickedItem) {
+  //     $scope.alert = clickedItem.name + ' clicked!';
+  //   });
+  // };
   
   $scope.showAdd = function(ev) {
     $mdDialog.show({
@@ -248,19 +239,19 @@ app.controller('AppCtrl', ['$scope', '$mdBottomSheet','$mdSidenav', '$mdDialog',
   };
 }]);
 
-app.controller('ListBottomSheetCtrl', function($scope, $mdBottomSheet) {
-  $scope.items = [
-    { name: 'Share', icon: 'share' },
-    { name: 'Upload', icon: 'upload' },
-    { name: 'Copy', icon: 'copy' },
-    { name: 'Print this page', icon: 'print' },
-  ];
+// app.controller('ListBottomSheetCtrl', function($scope, $mdBottomSheet) {
+//   $scope.items = [
+//     { name: 'Share', icon: 'share' },
+//     { name: 'Upload', icon: 'upload' },
+//     { name: 'Copy', icon: 'copy' },
+//     { name: 'Print this page', icon: 'print' },
+//   ];
   
-  $scope.listItemClick = function($index) {
-    var clickedItem = $scope.items[$index];
-    $mdBottomSheet.hide(clickedItem);
-  };
-});
+//   $scope.listItemClick = function($index) {
+//     var clickedItem = $scope.items[$index];
+//     $mdBottomSheet.hide(clickedItem);
+//   };
+// });
 
 function DialogController($scope, $mdDialog) {
   $scope.hide = function() {
@@ -281,19 +272,3 @@ app.directive('userAvatar', function() {
   };
 });
 
-// app.config(function($mdThemingProvider) {
-//   var customBlueMap = 		$mdThemingProvider.extendPalette('light-blue', {
-//     'contrastDefaultColor': 'light',
-//     'contrastDarkColors': ['50'],
-//     '50': 'ffffff'
-//   });
-//   $mdThemingProvider.definePalette('customBlue', customBlueMap);
-//   $mdThemingProvider.theme('default')
-//     .primaryPalette('customBlue', {
-//       'default': '500',
-//       'hue-1': '50'
-//     })
-//     .accentPalette('pink');
-//   $mdThemingProvider.theme('input', 'default')
-//         .primaryPalette('grey')
-// });
